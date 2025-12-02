@@ -1,0 +1,18 @@
+# Core dependencies
+# Note: Install PyTorch first with GPU support:
+# pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# Speech recognition and diarization
+openai-whisper>=20230314
+pyannote.audio>=3.1.0
+
+# Utilities
+tqdm>=4.65.0
+python-dotenv>=1.0.0
+
+# Audio processing (optional but recommended)
+ffmpeg-python>=0.2.0
+
+# Note: PyTorch dependencies
+# torch>=2.0.0  (install separately with CUDA support)
+# torchaudio>=2.0.0  (install separately with CUDA support)
