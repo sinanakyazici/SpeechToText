@@ -1,0 +1,177 @@
+# ============================================
+# 🎙️ GPU Destekli Konuşmacı Ayrımlı Ses Transkripsiyon
+# Python: 3.11.x
+# Test Edildi: ✅ Windows 10/11 + RTX 3060 Ti (8GB)
+# Son Güncelleme: 2025-12-02
+# ============================================
+
+# CORE: GPU Destekli PyTorch (CUDA 12.1)
+# ============================================
+# NOT: Bu satırı requirements.txt'ye EKLEMEYIN!
+# Manuel olarak kurulmalı:
+#
+# pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+#
+# Sebep: CUDA sürümüne özel index URL gerekiyor
+# ============================================
+
+# Transkripsiyon - Whisper
+# ============================================
+openai-whisper==20231117
+# Whisper bağımlılıkları (otomatik kurulur):
+# - tiktoken
+# - more-itertools
+
+# Konuşmacı Ayrımı - Pyannote
+# ============================================
+pyannote.audio==3.1.1
+# Pyannote ile UYUMLU versiyonlar kritik!
+
+# HuggingFace
+# ============================================
+huggingface-hub==0.19.4
+# NOT: 0.20+ pyannote 3.1.1 ile UYUMSUZ!
+transformers==4.35.2
+
+# Ses İşleme
+# ============================================
+speechbrain==0.5.16
+# NOT: 1.0+ pyannote 3.1.1 ile UYUMSUZ!
+
+# Temel Kütüphaneler
+# ============================================
+numpy==1.26.4
+# NOT: 2.x pyannote 3.1.1 ile UYUMSUZ!
+scipy==1.11.4
+soundfile==0.12.1
+tqdm==4.66.1
+
+# Yardımcı
+# ============================================
+filelock==3.13.1
+fsspec==2023.12.2
+sympy==1.12
+mpmath==1.3.0
+
+# ============================================
+# KURULUM SIRASI (ÖNEMLİ!)
+# ============================================
+#
+# 1. Python 3.11.x kurulumu
+#    python --version  # 3.11.x olmalı
+#
+# 2. Virtual environment
+#    python -m venv .venv
+#    .venv\Scripts\activate  # Windows
+#
+# 3. PyTorch GPU (ÖNCE BU!)
+#    pip install torch==2.5.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu121
+#
+# 4. Diğer paketler
+#    pip install -r requirements.txt
+#
+# 5. FFmpeg kurulumu
+#    choco install ffmpeg  # Chocolatey ile
+#    # VEYA
+#    # https://ffmpeg.org/download.html adresinden indirin
+#    # PATH'e ekleyin
+#
+# 6. Sistem kontrolü
+#    python system_check.py
+#
+# ============================================
+# VERSİYON NOTLARI - NEDEN BU VERSİYONLAR?
+# ============================================
+#
+# PyTorch 2.5.1+cu121:
+# - CUDA 12.1 ve 13.0 ile uyumlu
+# - RTX 3060 Ti ile test edildi
+# - pyannote.audio 3.1.1 ile çalışıyor
+#
+# pyannote.audio 3.1.1:
+# - Stabil ve test edilmiş
+# - 3.3.x bazı sorunlar var
+# - 4.x numpy 2.x gerektirir (uyumsuz)
+#
+# numpy 1.26.4:
+# - pyannote 3.1.1 numpy 2.x ile ÇALIŞMIYOR
+# - "np.NaN removed" hatası veriyor
+# - 1.26.x son uyumlu versiyon
+#
+# huggingface-hub 0.19.4:
+# - 0.20+ "use_auth_token deprecated" hatası
+# - pyannote 3.1.1 yeni API'yi desteklemiyor
+#
+# speechbrain 0.5.16:
+# - 1.0+ API değişiklikleri var
+# - pyannote 3.1.1 ile uyumlu son versiyon
+#
+# ============================================
+# SİSTEM GEREKSİNİMLERİ
+# ============================================
+#
+# DONANIM:
+# - GPU: NVIDIA (CUDA desteği) - 8GB+ VRAM önerilir
+# - RAM: 16GB+ önerilir
+# - Disk: 10GB+ (modeller için)
+#
+# YAZILIM:
+# - Windows 10/11 (64-bit)
+# - Python 3.11.x (3.13 UYUMSUZ!)
+# - CUDA 12.1+ drivers
+# - FFmpeg 4.x-8.x
+#
+# ============================================
+# TEST EDİLEN MODELLER
+# ============================================
+#
+# Whisper:
+# ✅ tiny   - ~1GB VRAM - Hızlı test
+# ✅ base   - ~1GB VRAM - Hızlı, orta kalite
+# ✅ small  - ~2GB VRAM - Önerilen (varsayılan)
+# ✅ medium - ~5GB VRAM - Yüksek kalite
+# ❌ large  - ~10GB VRAM - 8GB GPU'da çalışmaz
+#
+# ============================================
+# BİLİNEN SORUNLAR VE ÇÖZÜMLER
+# ============================================
+#
+# 1. "torch.cuda.is_available() = False"
+#    Çözüm: PyTorch'u GPU versiyonuyla kurun (adım 3)
+#
+# 2. "np.NaN was removed"
+#    Çözüm: numpy<2.0 kullanın (requirements.txt'de zaten var)
+#
+# 3. "use_auth_token deprecated"
+#    Çözüm: huggingface-hub<0.20 (requirements.txt'de zaten var)
+#
+# 4. "FFmpeg not found"
+#    Çözüm: FFmpeg kurun, PATH'e ekleyin, PyCharm'ı yeniden başlatın
+#
+# 5. "CUDA out of memory"
+#    Çözüm: Daha küçük model kullanın (medium → small)
+#
+# ============================================
+# PRODUCTION ORTAMI
+# ============================================
+#
+# Docker kullanıyorsanız:
+# - nvidia-docker gerekli
+# - CUDA 12.1 base image
+# - FFmpeg dahil edilmeli
+#
+# Cloud (AWS/Azure/GCP):
+# - GPU instance gerekli (p3, g4, T4, A10)
+# - CUDA drivers önceden kurulu olmalı
+# - Disk: Model cache için yer ayırın
+#
+# ============================================
+# DESTEK VE DOKÜMANTASYON
+# ============================================
+#
+# README.md         - Detaylı dokümantasyon
+# QUICKSTART.md     - Hızlı başlangıç
+# CHANGELOG.md      - Versiyon geçmişi
+# system_check.py   - Sistem test scripti
+#
+# ============================================
