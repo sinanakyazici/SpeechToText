@@ -234,7 +234,7 @@ def transcribe_audio(model, audio_path, model_size, language="en", use_cache=Tru
     file_size = audio_path.stat().st_size / (1024**2)
     print(f"\n📁 {audio_path.name}")
     print(f"📊 {file_size:.1f} MB")
-    print(f"🌍 Dil: {language.upper()}")
+    print(f"🌍 Dil: {language.upper() if language else 'Otomatik'}")
 
     # Cache kontrol
     if use_cache:
@@ -334,13 +334,27 @@ def merge_transcription_diarization(transcription, diarization):
                 max_overlap = overlap
                 best_speaker = speaker
 
-        if best_speaker:
-            segments_with_speakers.append({
-                "speaker": best_speaker,
-                "text": text,
-                "start": start,
-                "end": end
-            })
+        if not text:
+            continue
+
+        if best_speaker is None:
+            # Hiçbir konuşmacı segmenti ile örtüşme yoksa en yakın konuşmacıyı bul
+            min_distance = float('inf')
+            for turn, _, speaker in diarization.itertracks(yield_label=True):
+                distance = min(abs(start - turn.end), abs(end - turn.start))
+                if distance < min_distance:
+                    min_distance = distance
+                    best_speaker = speaker
+
+        if best_speaker is None:
+            best_speaker = "SPEAKER_00"
+
+        segments_with_speakers.append({
+            "speaker": best_speaker,
+            "text": text,
+            "start": start,
+            "end": end
+        })
 
     # Ardışık aynı konuşmacıları birleştir
     merged = []
@@ -425,29 +439,24 @@ def identify_main_speaker(blocks):
     print(f"\n🎤 Ana konuşmacı: {main_speaker}")
     print(f"   (En çok konuşan)")
 
-    # Ana konuşmacı SPEAKER_00 olmalı
-    if main_speaker != 'SPEAKER_00':
+    # Tüm konuşmacıları konuşma miktarına göre sırala ve yeniden etiketle
+    # En çok konuşan → SPEAKER_00, ikinci → SPEAKER_01, ...
+    all_speakers_sorted = sorted(
+        speaker_stats.keys(),
+        key=lambda x: speaker_stats[x]['total_chars'],
+        reverse=True
+    )
+
+    speaker_mapping = {speaker: f'SPEAKER_{i:02d}' for i, speaker in enumerate(all_speakers_sorted)}
+
+    # Herhangi bir değişiklik var mı?
+    needs_relabel = any(orig != new for orig, new in speaker_mapping.items())
+
+    if needs_relabel:
         print(f"\n🔄 Etiketler düzeltiliyor...")
-        print(f"   {main_speaker} → SPEAKER_00 (Ana konuşmacı)")
-
-        # Tüm konuşmacıları yeniden etiketle
-        # SPEAKER_00 olmayan en çok konuşan → SPEAKER_00
-        # Diğerleri sırayla SPEAKER_01, SPEAKER_02, ...
-
-        speaker_mapping = {}
-        speaker_mapping[main_speaker] = 'SPEAKER_00'
-
-        # Diğer konuşmacıları sırala (konuşma miktarına göre)
-        other_speakers = sorted(
-            [s for s in speaker_stats.keys() if s != main_speaker],
-            key=lambda x: speaker_stats[x]['total_chars'],
-            reverse=True
-        )
-
-        for i, speaker in enumerate(other_speakers, start=1):
-            new_label = f'SPEAKER_{i:02d}'
-            speaker_mapping[speaker] = new_label
-            print(f"   {speaker} → {new_label}")
+        for orig, new in speaker_mapping.items():
+            if orig != new:
+                print(f"   {orig} → {new}")
 
         # Blokları güncelle
         for block in blocks:
@@ -474,9 +483,12 @@ def save_output(blocks, audio_path, model_name):
     output_path = audio_path.parent / output_filename
 
     def format_timestamp(seconds):
-        """Saniyeyi 0:00 formatına çevir"""
-        minutes = int(seconds // 60)
+        """Saniyeyi 0:00 / 0:00:00 formatına çevir"""
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
         secs = int(seconds % 60)
+        if hours > 0:
+            return f"{hours}:{minutes:02d}:{secs:02d}"
         return f"{minutes}:{secs:02d}"
 
     with open(output_path, 'w', encoding='utf-8') as f:
