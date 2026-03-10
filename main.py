@@ -22,12 +22,13 @@ from pathlib import Path
 from datetime import datetime
 
 from dotenv import load_dotenv
-load_dotenv()
-
 import torch
 import whisper
 from tqdm import tqdm
 from pyannote.audio import Pipeline
+
+# .env dosyasını yükle
+load_dotenv()
 
 # ============================================
 # YAPILANDIRMA
@@ -40,7 +41,7 @@ class Config:
     WHISPER_MODEL_DIR = r"D:\LLM-Models\Whisper"
 
     # HuggingFace token (.env dosyasından okunur)
-    HF_TOKEN = os.getenv("HF_TOKEN", "")
+    HF_TOKEN = os.getenv("HF_TOKEN")
 
     # Model seçenekleri
     WHISPER_MODEL = "small"  # tiny, base, small, medium, large
