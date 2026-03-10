@@ -21,6 +21,9 @@ import warnings
 from pathlib import Path
 from datetime import datetime
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import torch
 import whisper
 from tqdm import tqdm
@@ -36,8 +39,8 @@ class Config:
     # Model dizinleri
     WHISPER_MODEL_DIR = r"D:\LLM-Models\Whisper"
 
-    # HuggingFace token
-    HF_TOKEN = "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"
+    # HuggingFace token (.env dosyasından okunur)
+    HF_TOKEN = os.getenv("HF_TOKEN", "")
 
     # Model seçenekleri
     WHISPER_MODEL = "small"  # tiny, base, small, medium, large
